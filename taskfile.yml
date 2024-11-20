@@ -1,0 +1,42 @@
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  # ---------------------------------------- #
+  # Default tasks
+  # ---------------------------------------- #
+
+  default:
+    desc: Show this help message
+    cmd: task --list-all
+    silent: true
+
+  # ---------------------------------------- #
+  # Development tasks
+  # ---------------------------------------- #
+
+  init-tests:
+    desc: Initialize the tests
+    aliases: [initt]
+    vars:
+      SCRIPTS:
+        sh: find scripts -type f -name "*.sample" | sed 's/.sample//g' | xargs -n1 basename
+    cmds:
+      - cp -r config tests/config
+      - for: { var: SCRIPTS, split: "\n" }
+        cmd: cp scripts/{{ .ITEM }}.sample tests/{{ .ITEM }} && chmod +x tests/{{ .ITEM }}
+    silent: true
+
+  remove-tests:
+    desc: Remove the tests
+    aliases: [rmt]
+    vars:
+      SCRIPTS:
+        sh: find scripts -type f -name "*.sample" | sed 's/.sample//g' | xargs -n1 basename
+    cmds:
+      - rm -rf tests/config
+      - for: { var: SCRIPTS, split: "\n" }
+        cmd: rm -f tests/{{ .ITEM }}
+
+    silent: true

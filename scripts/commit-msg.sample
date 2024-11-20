@@ -1,15 +1,16 @@
 #!/bin/bash
 
-# * Get the directory of the current script
-SCRIPT_DIR=$(dirname "$0")
-
-# * Launch the script that checks if jq is installed
-"$SCRIPT_DIR/check-jq"
-if [ $? -ne 0 ]; then
+# * Check if `jq` is installed
+if ! command -v jq &>/dev/null; then
+    echo -e "\e[1m\e[31m[ERROR]"
+    echo -e "-------\033[0m\e[0m"
+    echo -e "\e[1mjq\e[0m is required to run this script."
+    echo -e "Please install it by running: \e[34msudo apt install jq\033[0m"
     exit 1
 fi
 
 # * Load the config
+SCRIPT_DIR=$(dirname $0)
 config="$SCRIPT_DIR/config/commit-msg.config.json"
 
 # * Set variables
