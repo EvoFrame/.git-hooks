@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# * Get the directory of the current script
+SCRIPT_DIR=$(dirname "$0")
+
+# * Launch the script that checks if jq is installed
+"$SCRIPT_DIR/check-jq"
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+# * Load the config
+config="$SCRIPT_DIR/config/commit-msg.config.json"
+
+# * Set variables
+enabled=$(jq -r '.enabled' $config)
+revert=$(jq -r '.revert' $config)
+types=($(jq -r '.types[]' $config))
+min_length=$(jq -r '.length.min' $config)
+max_length=$(jq -r '.length.max' $config)
+
+# * Check if the script is enabled or if there is no config file
+if [[ ! -f $config || $enabled == false ]]; then
+    exit 0
+fi
+
+# * Build the regex
+regex="^("
+
+if [ $revert == true ]; then # * If the revert type is enabled
+    regex+="revert: )?("
+fi
+
+for type in "${types[@]}"; do
+    regex+="$type|"
+done
+
+# * Remove the last pipe and close the regex
+regex="${regex%?})(\(.+\))?: "
+
+# * Add the min and max length
+regex+=".{$min_length,$max_length}$"
+
+# ? Debug log
+# echo "The regex is: $regex"
+
+# * Get the first line of the commit message
+commit_msg=$(head -1 $1)
+
+# ? Debug log
+# echo "The commit message is: $commit_msg"
+
+# * Check if the commit message matches the regex
+if [[ ! $commit_msg =~ $regex ]]; then
+    echo -e "\n\e[1m\e[31m[INVALID COMMIT MESSAGE]"
+    echo -e "------------------------\033[0m\e[0m"
+    # Show the rules
+    echo -e "\e[1mValid types:\e[0m \e[34m${types[@]}\033[0m"
+    echo -e "\e[1mMax length (first line):\e[0m \e[34m$max_length\033[0m"
+    echo -e "\e[1mMin length (first line):\e[0m \e[34m$min_length\033[0m\n"
+    # Show an example of a valid commit message
+    echo -e "\e[1mExample of a valid commit message:\e[0m"
+    echo -e "\e[34mfeat(users): add new login method\033[0m"
+
+    # exit with an error
+    exit 1
+fi

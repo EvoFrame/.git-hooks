@@ -1,0 +1,4 @@
+# Ignore all except for the data directory and the .gitignore file itself
+*
+!.gitignore
+!data/
